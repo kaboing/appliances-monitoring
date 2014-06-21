@@ -72,8 +72,8 @@ def send_sms(from_, text):
     for number in sms_numbers:
         msg = {
             'reqtype': 'json',
-            'api_key': '17ab498d',
-            'api_secret': '89df51fb',
+            'api_key': nexmo_key,
+            'api_secret': nexmo_secret,
             'from': from_,
             'to': number,
             'text': text
