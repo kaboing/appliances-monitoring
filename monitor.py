@@ -46,27 +46,28 @@ class Dryer(Appliance):
 		return power_usage < 50 and len(self.measures) > 60 and avg_d < 20
 
 def read_config():
-    config = ConfigParser.RawConfigParser()
-    config.read('config.cfg')
-    device_section_names = config.get('Devices', 'keys').split(',')
+	global nexmo_key
+	global nexmo_secret
+	config = ConfigParser.RawConfigParser()
+	config.read('config.cfg')
+	device_section_names = config.get('Devices', 'keys').split(',')
 
-    for device_section in device_section_names:
-        mac = config.get(device_section, 'mac')
-        sms_name = config.get(device_section, 'sms_name')
-        type = config.get(device_section, 'type')
-        if (type == 'Washer'):
-            app = Washer(mac, sms_name)
-        elif (type == 'Dryer'):
-            app = Dryer(mac, sms_name)
-        apps.append(app)
-
-    numbers = config.options('Numbers')
-    for number in numbers:
-        sms_numbers.append(config.get('Numbers', number))
+	for device_section in device_section_names:
+		mac = config.get(device_section, 'mac')
+		sms_name = config.get(device_section, 'sms_name')
+		type = config.get(device_section, 'type')
+		if (type == 'Washer'):
+			app = Washer(mac, sms_name)
+		elif (type == 'Dryer'):
+			app = Dryer(mac, sms_name)
+		apps.append(app)
 
 	nexmo_key = config.get('Nexmo', 'key')
 	nexmo_secret = config.get('Nexmo', 'secret')
-		
+
+	numbers = config.options('Numbers')
+	for number in numbers:
+		sms_numbers.append(config.get('Numbers', number))
 
 def send_sms(from_, text):
     for number in sms_numbers:
@@ -86,8 +87,6 @@ def send_sms(from_, text):
 
 def appliance_started( sender ):
     print sender.sms_name, 'has started'
-    now = datetime.now()
-    send_sms(sender.sms_name, 'Startar nu (' + now.strftime('%H:%M') + ')')
 
 def appliance_finished( sender ):
     print sender.sms_name, 'has ended'
@@ -100,12 +99,9 @@ def appliance_finished( sender ):
 
 apps = []
 sms_numbers = []
-nexmo_key = ''
-nexmo_secret = ''
 com_port = 'COM3'
 
 read_config()
-
 
 try:
     device = Stick(com_port)
@@ -116,8 +112,10 @@ except Exception as e:
 for app in apps:
 	app.c = Circle(app.mac, device)
 
+
+
 while True:
-    for app in apps:
-        app.Measure()
-    time.sleep(1)
+	for app in apps:
+		app.Measure()
+	time.sleep(1)
 
