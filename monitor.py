@@ -1,4 +1,4 @@
-﻿from plugwise import *
+from plugwise import *
 from nexmomessage import NexmoMessage
 from datetime import datetime
 import ConfigParser
@@ -8,7 +8,7 @@ class Appliance:
     def __init__(self, mac, sms_name):
         self.mac = mac
         self.sms_name = sms_name
-        self.measures = deque([],100)
+        self.measures = deque([],20)
         self.cycle = False
 
     def HasCycleStarted(self, power_usage):
@@ -31,19 +31,20 @@ class Appliance:
             appliance_started(self)
         if (self.cycle and self.HasCycleEnded(power_usage, avg_m)):
             self.cycle = False
+            self.measures = deque([],20)
             appliance_finished(self)
 
 class Washer(Appliance):
 	def HasCycleStarted(self, avg_m, power_usage):
-		return power_usage > 50 and len(self.measures) > 60 and avg_m > 10
+		return power_usage > 50 and len(self.measures) > 12 and avg_m > 10
 	def HasCycleEnded(self, avg_d, power_usage):
-		return power_usage < 50 and len(self.measures) > 60 and avg_d < 10
+		return power_usage < 50 and len(self.measures) > 12 and avg_d < 10
 
 class Dryer(Appliance):
 	def HasCycleStarted(self, avg_m, power_usage):
-		return power_usage > 50 and len(self.measures) > 60 and avg_m > 20
+		return power_usage > 50 and len(self.measures) > 12 and avg_m > 20
 	def HasCycleEnded(self, avg_d, power_usage):
-		return power_usage < 50 and len(self.measures) > 60 and avg_d < 20
+		return power_usage < 50 and len(self.measures) > 12 and avg_d < 20
 
 def read_config():
 	global nexmo_key
@@ -99,7 +100,7 @@ def appliance_finished( sender ):
 
 apps = []
 sms_numbers = []
-com_port = 'COM3'
+com_port = '/dev/ttyUSB0'
 
 read_config()
 
@@ -117,5 +118,5 @@ for app in apps:
 while True:
 	for app in apps:
 		app.Measure()
-	time.sleep(1)
+	time.sleep(5)
 
