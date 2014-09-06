@@ -1,8 +1,10 @@
-﻿from plugwise import *
+﻿from flask import Flask, jsonify
+from plugwise import *
 from nexmomessage import NexmoMessage
 from datetime import datetime
 import ConfigParser
 from collections import deque
+
 
 class Appliance:
     def __init__(self, mac, sms_name):
@@ -10,6 +12,15 @@ class Appliance:
         self.sms_name = sms_name
         self.measures = deque([],100)
         self.cycle = False
+        self.cyclestarttime = None
+
+    def serialize(self):
+        return {
+            'name': self.sms_name,
+            'mac': self.mac,
+            'starttime': self.cyclestarttime,
+            'is_running': self.cycle
+        }
 
     def HasCycleStarted(self, power_usage):
         return False
@@ -97,6 +108,10 @@ def appliance_finished( sender ):
     send_sms(sender.sms_name, 'Färdig! Tog ' +  ':'.join(str(took_time).split(':')[:2]) + ', slutade ' + now.strftime('%H:%M'))
 
 
+rest_app = Flask(__name__)
+
+
+
 apps = []
 sms_numbers = []
 com_port = 'COM3'
@@ -112,7 +127,14 @@ except Exception as e:
 for app in apps:
 	app.c = Circle(app.mac, device)
 
+@rest_app.route('/')
+def index():
+    return jsonify(
+        { 'apps': [a.serialize() for a in apps]}
+        );
 
+if __name__ == '__main__':
+    rest_app.run(debug = True)
 
 while True:
 	for app in apps:
